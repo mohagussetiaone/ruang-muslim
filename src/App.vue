@@ -1,25 +1,9 @@
-<script setup lang="ts">
-// import Button from "@/components/ui/button.vue";
-</script>
-
 <template>
-  <div>
-    <!-- <Button>Oke gass</Button> -->
-  </div>
-  <HelloWorld msg="Vite + Vue" />
+  <!-- RouterView di root = semua route di-render di sini -->
+  <!-- AppLayout sudah mengandung Navbar + Footer via nested routes -->
+  <RouterView />
 </template>
 
-<style scoped>
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
-}
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
-}
-.logo.vue:hover {
-  filter: drop-shadow(0 0 2em #42b883aa);
-}
-</style>
+<script setup>
+// App.vue seminimal mungkin, layout dihandle di router
+</script>
