@@ -1,11 +1,10 @@
 <script setup lang="ts">
-// import HelloWorld from "./components/HelloWorld.vue";
-import { Button } from "./components/ui/button";
+// import Button from "@/components/ui/button.vue";
 </script>
 
 <template>
   <div>
-    <Button>Oke gass</Button>
+    <!-- <Button>Oke gass</Button> -->
   </div>
   <HelloWorld msg="Vite + Vue" />
 </template>
