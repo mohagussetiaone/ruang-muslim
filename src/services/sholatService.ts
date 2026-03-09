@@ -36,6 +36,6 @@ export const sholatService = {
 
   async getJadwalByKota({ kota, negara = "ID", bulan, tahun }: JadwalByKotaParams): Promise<PrayerTimings[]> {
     const { data } = await prayerApi.get<{ data: Array<{ timings: PrayerTimings }> }>(`/calendarByCity/${tahun}/${bulan}`, { params: { city: kota, country: negara, method: 11 } });
-    return data.data.map((d) => d.timings);
+    return data.data.map((d: { timings: PrayerTimings }) => d.timings);
   },
 };
