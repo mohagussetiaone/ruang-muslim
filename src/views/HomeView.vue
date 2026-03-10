@@ -3,7 +3,7 @@
     <!-- HERO -->
     <section class="relative overflow-hidden border-b-4 border-accent bg-linear-to-b from-primary/5 via-primary/10 to-primary/20">
       <div class="absolute inset-0 opacity-[0.06]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 44px 44px" />
-      <div class="relative max-w-6xl mx-auto px-4 py-20 grid md:grid-cols-2 gap-12 items-center">
+      <div class="relative max-w-6xl mx-auto px-2 md:px-4 py-20 grid md:grid-cols-2 gap-12 items-center">
         <!-- Left -->
         <div>
           <h1 class="font-display text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] mb-6">
@@ -33,16 +33,16 @@
 
         <!-- Right: Ayat card -->
         <div class="relative">
-          <Card class="bg-primary/20 border-2 border-main-foreground/20 p-8">
+          <Card class="bg-primary/20 border-2 border-main-foreground/20 p-2 sm:p-4 md:p-8">
             <Badge variant="default" class="absolute -top-3 left-6 uppercase">Jadwal solat</Badge>
 
             <!-- Baris lokasi dan tanggal -->
-            <div class="w-full flex justify-between">
+            <div class="w-full flex justify-between mt-2 items-center">
               <div>
-                <h1>Lokasi anda</h1>
+                <h1 class="text-xs md:text-sm">Lokasi anda</h1>
                 <div class="flex gap-2 items-center">
                   <MapPinIcon class="w-6 h-6 text-accent" />
-                  <p class="font-bold">{{ locationName || "Memuat lokasi..." }}</p>
+                  <p class="text-xs md:text-sm font-bold">{{ locationName || "Memuat lokasi..." }}</p>
                   <Button v-if="!appStore.hasLocation" size="sm" variant="neutral" @click="requestLocation" :loading="gettingLocation"> Perbarui </Button>
                 </div>
               </div>
@@ -50,12 +50,12 @@
                 <div class="text-right text-xs text-muted-foreground px-4" v-if="todayDate">
                   {{ todayDate }}
                 </div>
-                <h3>{{ hijriDate }}</h3>
+                <h3 class="text-xs md:text-sm">{{ hijriDate }}</h3>
               </div>
             </div>
 
             <!-- Card jadwal sholat -->
-            <Card class="bg-secondary-background text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none mt-4">
+            <Card class="bg-secondary-background gap-2 sm:gap-4 md:gap-6 text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none mt-4">
               <!-- Bagian atas: sholat berikutnya -->
               <div class="flex flex-col gap-3 justify-center items-center p-6">
                 <!-- Tampilkan skeleton saat loading -->
@@ -93,13 +93,13 @@
               </div>
 
               <!-- Grid 5 tombol untuk semua waktu sholat -->
-              <div class="grid grid-cols-5 gap-4 m-4">
+              <div class="grid grid-cols-5 gap-4 m-2 md:m-4">
                 <template v-if="isLoading">
                   <Skeleton v-for="n in 5" :key="n" class="h-16 w-full" />
                 </template>
                 <template v-else-if="jadwal">
                   <Button v-for="prayer in jadwal" :key="prayer.key" :class="['flex h-auto flex-col justify-center items-center', prayer.key === nextPrayer?.key ? '' : 'bg-primary/85']" variant="neutral">
-                    <h1 class="text-sm font-black tracking-widest">{{ prayer.name }}</h1>
+                    <h1 class="text-xs md:text-sm font-black tracking-widest">{{ prayer.name }}</h1>
                     <p class="font-display text-base font-black">{{ prayer.time }}</p>
                   </Button>
                 </template>
