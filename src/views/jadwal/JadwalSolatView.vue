@@ -8,18 +8,18 @@
         <Badge variant="neutral" class="mb-3">Jadwal Sholat</Badge>
 
         <h1 class="font-display text-5xl font-black mb-2">Waktu Sholat</h1>
+        <p v-if="hijriDate" class="text-sm font-bold text-main-foreground/80">{{ hijriDate }}</p>
+        <p class="text-main-foreground/60 text-sm mt-1">{{ selectedDateDisplay }}</p>
 
-        <!-- TANGGAL HIJRIAH -->
-        <p v-if="hijriDate" class="text-sm font-bold text-main-foreground/80">
-          {{ hijriDate }}
+        <!-- NEXT PRAYER INFO DI HEADER -->
+        <p v-if="nextPrayer" class="text-sm mt-3 opacity-80">
+          <span v-if="isTodaySelected">⏳ {{ countdownText }} menuju {{ nextPrayer.name }}</span>
+          <span v-else>⏳ Sholat berikutnya: {{ nextPrayer.name }} {{ nextPrayer.time }}</span>
         </p>
-
-        <p class="text-main-foreground/60 text-sm mt-1">
-          {{ selectedDateDisplay }}
+        <p v-else-if="jadwal" class="text-sm mt-3 opacity-80">
+          <span v-if="isTodaySelected">Semua sholat hari ini telah selesai</span>
+          <span v-else>Tidak ada sholat tersisa pada tanggal ini</span>
         </p>
-
-        <!-- COUNTDOWN DI HEADER (hanya teks, tanpa badge) -->
-        <p v-if="nextPrayerName && isTodaySelected" class="text-sm mt-3 opacity-80">⏳ {{ countdown }} menuju {{ nextPrayerName }}</p>
       </div>
     </div>
 
@@ -138,7 +138,7 @@
           :key="prayer.key"
           :class="[
             'p-1 sm:p-2 md:p-5 gap-2 text-center border-2 transition-all duration-300',
-            isNextPrayer(prayer) && isTodaySelected ? 'bg-primary/90 text-primary-foreground border-border shadow-shadow-lg scale-[1.05]' : 'bg-background shadow-shadow',
+            isNextPrayer(prayer) && isTodaySelected ? 'bg-primary/90 text-primary-foreground border-border shadow-shadow-lg scale-[1.05]' : 'active:scale-95 bg-secondary-background text-foreground border-2 border-border shadow-shadow',
           ]"
         >
           <div class="text-3xl mb-2">
@@ -154,7 +154,7 @@
             {{ prayer.time }}
           </p>
           <div v-if="isNextPrayer(prayer) && isTodaySelected" class="mt-2 flex flex-col items-center gap-1">
-            <p class="text-sm opacity-80">{{ countdown }}</p>
+            <p class="text-sm opacity-80">{{ countdownText }}</p>
             <Badge variant="neutral" class="text-[9px]">Menuju {{ prayer.name }}</Badge>
           </div>
         </Card>
@@ -202,8 +202,8 @@
             @click="setDay(item.day)"
           >
             <span class="text-[9px] md:text-xs text-left absolute left-2 top-2 font-bold">{{ item.day }}</span>
-            <span class="leading-tight">{{ getSubuhTime(item.day) }}</span>
-            <span class="hidden md:visible md:text-xs leading-tight text-muted-foreground group-hover:text-white"> {{ item.hijriDay }} {{ item.hijriMonthName }} {{ item.hijriYear }} H </span>
+            <span class="leading-tight"></span>
+            <span class="hidden sm:flex md:text-xs leading-tight text-muted-foreground group-hover:text-white"> {{ item.hijriDay }} {{ item.hijriMonthName }} {{ item.hijriYear }} H </span>
           </Button>
         </div>
 
@@ -215,7 +215,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { toHijri } from "hijri-converter";
 
 import { MoonStar, Sun, CloudSun, Sunrise, Stars, ChevronLeft, ChevronRight } from "lucide-vue-next";
@@ -243,6 +243,10 @@ import {
 import { useMonthlyJadwal } from "@/composables/queries/useMonthlyJadwal";
 
 const appStore = useAppStore();
+
+// State untuk next prayer dan countdown
+const nextPrayer = ref<{ name: string; key: string; time: string; datetime: Date } | null>(null);
+const countdownText = ref("");
 
 // State lokasi
 const gettingLocation = ref(false);
@@ -366,64 +370,59 @@ async function requestLocation() {
   gettingLocation.value = false;
 }
 
-// State untuk countdown
-const nextPrayerName = ref<string | null>(null);
-const countdown = ref("");
+// Cek apakah suatu sholat adalah sholat berikutnya (hanya relevan jika hari ini)
 
-// Update countdown (dijalankan tiap detik, hanya jika tanggal yang dipilih adalah hari ini)
-function updateCountdown() {
-  if (!jadwal.value || !isTodaySelected.value) {
-    nextPrayerName.value = null;
-    countdown.value = "";
+function isNextPrayer(prayer: PrayerTime) {
+  if (!isTodaySelected.value || !nextPrayer.value) return false;
+  return prayer.key === nextPrayer.value.key;
+}
+
+// Fungsi memperbarui next prayer dan countdown
+function updateNextPrayer() {
+  if (!jadwal.value) {
+    nextPrayer.value = null;
+    countdownText.value = "";
     return;
   }
 
   const now = new Date();
-  const currentTime = now.getTime();
+  const selected = selectedDate.value;
+  let found: { name: string; key: string; time: string; datetime: Date } | null = null;
 
   for (const p of jadwal.value) {
     const [h, m] = p.time.split(":").map(Number);
-    const prayerTime = new Date(now);
-    prayerTime.setHours(h ?? 0, m ?? 0, 0, 0); // set detik dan milidetik ke 0
-    const diffMs = prayerTime.getTime() - currentTime;
+    const prayerDateTime = new Date(selected);
+    prayerDateTime.setHours(h ?? 0, m ?? 0, 0, 0);
 
+    if (prayerDateTime > now) {
+      found = {
+        name: p.name,
+        key: p.key,
+        time: p.time,
+        datetime: prayerDateTime,
+      };
+      break;
+    }
+  }
+
+  nextPrayer.value = found;
+
+  // Hitung countdown hanya untuk hari ini
+  if (found && isTodaySelected.value) {
+    const diffMs = found.datetime.getTime() - now.getTime();
     if (diffMs > 0) {
       const totalSeconds = Math.floor(diffMs / 1000);
       const hours = Math.floor(totalSeconds / 3600);
       const minutes = Math.floor((totalSeconds % 3600) / 60);
       const seconds = totalSeconds % 60;
-
-      // Opsi 1: format HH:MM:SS (dua digit)
       const pad = (n: number) => n.toString().padStart(2, "0");
-      countdown.value = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
-
-      // Opsi 2: format teks (misal: "2 jam 15 menit 30 detik")
-      // countdown.value = `${hours} jam ${minutes} menit ${seconds} detik`;
-
-      nextPrayerName.value = p.name;
-      return;
+      countdownText.value = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+    } else {
+      countdownText.value = "";
     }
+  } else {
+    countdownText.value = "";
   }
-
-  // Jika sudah lewat semua sholat hari ini (setelah Isya), bisa diisi dengan sholat besok atau dikosongkan
-  nextPrayerName.value = null;
-  countdown.value = "";
-}
-
-// Cek apakah suatu sholat adalah sholat berikutnya (hanya relevan jika hari ini)
-function isNextPrayer(prayer: PrayerTime) {
-  if (!jadwal.value || !isTodaySelected.value) return false;
-
-  const current = new Date();
-  const currentMinutes = current.getHours() * 60 + current.getMinutes();
-
-  for (const p of jadwal.value) {
-    const [h, m] = p.time.split(":").map(Number);
-    if ((h ?? 0) * 60 + (m ?? 0) > currentMinutes) {
-      return p.key === prayer.key;
-    }
-  }
-  return false; // jika sudah lewat semua
 }
 
 // Timer untuk update countdown tiap detik
@@ -431,9 +430,21 @@ let timer: ReturnType<typeof setInterval>;
 
 onMounted(() => {
   timer = setInterval(() => {
-    updateCountdown();
+    updateNextPrayer();
   }, 1000);
 });
+
+onUnmounted(() => {
+  clearInterval(timer);
+});
+
+watch(
+  [jadwal, selectedDate],
+  () => {
+    updateNextPrayer();
+  },
+  { immediate: true },
+);
 
 onUnmounted(() => {
   clearInterval(timer);
@@ -458,13 +469,6 @@ const firstDayOfMonth = computed(() => {
   const d = new Date(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), 1);
   return d.getDay(); // 0 = Minggu
 });
-
-// Helper untuk mengambil waktu Subuh dari data bulanan
-function getSubuhTime(day: number) {
-  if (!monthlyData.value) return "";
-  const key = `${day.toString().padStart(2, "0")}-${currentMonthIndex.value.toString().padStart(2, "0")}-${currentYear.value}`;
-  return monthlyData.value[key]?.[0]?.time || "";
-}
 
 const hijriDaysInMonth = computed(() => {
   const year = selectedDate.value.getFullYear();

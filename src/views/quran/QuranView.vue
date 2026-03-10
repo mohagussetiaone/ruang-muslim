@@ -5,7 +5,7 @@
       <div class="absolute inset-0 opacity-[0.05]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 32px 32px" />
       <div class="relative max-w-6xl mx-auto">
         <Badge variant="default" class="mb-3">📖 Al-Quran Digital</Badge>
-        <h1 class="font-display text-5xl font-black mb-1">114 Surah</h1>
+        <h1 class="font-display text-5xl mb-1">114 Surah</h1>
         <p class="text-main-foreground/50 text-sm">Klik surah untuk membaca lengkap dengan terjemahan</p>
       </div>
     </div>

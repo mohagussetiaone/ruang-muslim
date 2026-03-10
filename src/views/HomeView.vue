@@ -14,8 +14,12 @@
           <p class="text-lg leading-relaxed mb-8 max-w-md">Platform spiritual modern untuk membimbing langkah ibadah harian Anda dengan lebih bermakna.</p>
 
           <div class="flex flex-wrap gap-3">
-            <Button as="router-link" :to="{ name: 'quran' }" variant="reverse" size="lg">Buka Al-Quran </Button>
-            <Button as="router-link" :to="{ name: 'jadwal-sholat' }" variant="neutral" size="lg" class="border-main-foreground/40 hover:bg-main-foreground/10">Jadwal Sholat </Button>
+            <Button as-child variant="reverse" size="lg">
+              <RouterLink :to="{ name: 'quran' }">Buka Al-Quran</RouterLink>
+            </Button>
+            <Button as-child variant="neutral" size="lg" class="border-main-foreground/40 hover:bg-main-foreground/10">
+              <RouterLink :to="{ name: 'jadwal-sholat' }">Jadwal Sholat</RouterLink>
+            </Button>
           </div>
 
           <!-- Stats -->

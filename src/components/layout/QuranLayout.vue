@@ -5,7 +5,7 @@
       <div class="px-5 py-4 border-b-2 border-main-foreground/10 flex items-center justify-between shrink-0">
         <div>
           <p class="font-display font-black text-base">Al-Quran Digital</p>
-          <p class="text-main-foreground/40 text-[10px] mt-0.5">114 Surah</p>
+          <p class="text-[10px] mt-0.5">114 Surah</p>
         </div>
         <button class="w-7 h-7 flex items-center justify-center rounded-md border border-main-foreground/20 text-main-foreground/50 hover:text-main-foreground hover:border-main-foreground/40 transition-colors" @click="sidebarOpen = false">
           <X class="w-3.5 h-3.5" />

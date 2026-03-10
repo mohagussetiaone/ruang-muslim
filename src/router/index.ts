@@ -30,14 +30,14 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: "quran",
+        name: "quran",
+        component: () => import("@/views/quran/QuranView.vue"),
+        meta: { title: "Al-Quran Digital" },
+      },
+      {
+        path: "quran",
         component: QuranLayout,
         children: [
-          {
-            path: "",
-            name: "quran",
-            component: () => import("@/views/quran/QuranView.vue"),
-            meta: { title: "Al-Quran Digital" },
-          },
           {
             path: ":surahId",
             name: "surah-detail",
