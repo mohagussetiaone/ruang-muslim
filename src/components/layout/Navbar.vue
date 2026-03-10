@@ -3,8 +3,8 @@
     <nav class="max-w-6xl mx-auto px-4 h-16 flex items-center justify-between">
       <!-- Logo -->
       <RouterLink to="/" class="flex items-center gap-2 group">
-        <div class="w-9 h-9 border-2 border-dark shadow-neo flex items-center justify-center text-cream text-lg font-bold transition-transform group-hover:-translate-y-0.5">☾</div>
-        <span class="font-display text-xl font-bold text-dark"> Ruang<span class="text-primary">Muslim</span> </span>
+        <img :src="LogoMain" alt="Ruang Muslim logo" />
+        <span class="font-display text-xl font-bold text-dark">Ruang<span class="text-primary">Muslim</span></span>
       </RouterLink>
 
       <!-- Desktop Nav -->
@@ -54,6 +54,7 @@
 <script setup>
 import { ref } from "vue";
 import { useRoute } from "vue-router";
+import LogoMain from "@/assets/logo/main-logo.png";
 
 const route = useRoute();
 const mobileMenuOpen = ref(false);

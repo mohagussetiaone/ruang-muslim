@@ -5,7 +5,7 @@
       <div class="absolute inset-0 opacity-[0.05]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 32px 32px" />
 
       <div class="relative max-w-4xl mx-auto text-center">
-        <Badge variant="default" class="mb-3">🕌 Jadwal Sholat</Badge>
+        <Badge variant="neutral" class="mb-3">Jadwal Sholat</Badge>
 
         <h1 class="font-display text-5xl font-black mb-2">Waktu Sholat</h1>
 
@@ -18,14 +18,14 @@
           {{ selectedDateDisplay }}
         </p>
 
-        <!-- COUNTDOWN (hanya tampil jika tanggal yang dipilih adalah hari ini) -->
-        <p v-if="nextPrayerName && isTodaySelected" class="text-xs mt-3 font-bold opacity-80">⏳ {{ countdown }} menuju {{ nextPrayerName }}</p>
+        <!-- COUNTDOWN DI HEADER (hanya teks, tanpa badge) -->
+        <p v-if="nextPrayerName && isTodaySelected" class="text-sm mt-3 opacity-80">⏳ {{ countdown }} menuju {{ nextPrayerName }}</p>
       </div>
     </div>
 
-    <div class="max-w-4xl mx-auto px-4 py-8 space-y-6">
+    <div class="max-w-5xl mx-auto px-4 py-8 space-y-6">
       <!-- CARD PEMILIH TANGGAL (KALENDER) -->
-      <Card class="p-5 border-2">
+      <Card class="p-1 sm:p-2 md:p-5 border-2">
         <div class="flex items-center justify-between">
           <!-- Bagian kiri: teks tanggal -->
           <div @click="isCalendarOpen = true" class="cursor-pointer">
@@ -92,7 +92,7 @@
       </Card>
 
       <!-- LOKASI (sama seperti sebelumnya) -->
-      <Card class="p-5 border-2">
+      <Card class="p-1 sm:p-2 md:p-5 border-2">
         <div class="flex items-center gap-3 mb-4">
           <div class="w-10 h-10 bg-main border-2 border-border flex items-center justify-center text-lg shadow-shadow">📍</div>
 
@@ -111,7 +111,9 @@
               {{ appStore.koordinat?.lng.toFixed(5) }}
             </p>
 
-            <p v-if="locationName" class="text-xs font-bold mt-1">
+            <!-- Indikator loading nama lokasi -->
+            <p v-if="gettingLocation" class="text-xs font-bold mt-1 text-muted-foreground">⏳ Memuat lokasi...</p>
+            <p v-else-if="locationName" class="text-xs font-bold mt-1">
               {{ locationName }}
             </p>
           </div>
@@ -134,10 +136,14 @@
         <Card
           v-for="(prayer, i) in jadwal"
           :key="prayer.key"
-          :class="['p-5 text-center border-2 transition-all duration-300', isNextPrayer(prayer) && isTodaySelected ? 'bg-primary/90 text-primary-foreground border-border shadow-shadow-lg scale-[1.05]' : 'bg-background shadow-shadow']"
+          :class="[
+            'p-1 sm:p-2 md:p-5 gap-2 text-center border-2 transition-all duration-300',
+            isNextPrayer(prayer) && isTodaySelected ? 'bg-primary/90 text-primary-foreground border-border shadow-shadow-lg scale-[1.05]' : 'bg-background shadow-shadow',
+          ]"
         >
           <div class="text-3xl mb-2">
-            {{ prayerIcons[i] }}
+            <component v-if="prayerIconMap[prayer.name]" :is="prayerIconMap[prayer.name]" />
+            <span v-else>{{ prayerIcons[i] }}</span>
           </div>
 
           <p class="font-black text-sm">
@@ -148,19 +154,61 @@
             {{ prayer.time }}
           </p>
           <div v-if="isNextPrayer(prayer) && isTodaySelected" class="mt-2 flex flex-col items-center gap-1">
-            <p class="text-[10px] font-bold opacity-80">⏳ {{ countdown }} lagi</p>
-            <Badge class="text-[9px]">BERIKUTNYA</Badge>
+            <p class="text-sm opacity-80">{{ countdown }}</p>
+            <Badge variant="neutral" class="text-[9px]">Menuju {{ prayer.name }}</Badge>
           </div>
         </Card>
       </div>
 
       <!-- BULANAN (nanti bisa diarahkan ke halaman kalender bulanan) -->
-      <Card class="border-2 p-5 flex items-center justify-between">
-        <div>
-          <p class="font-black text-sm">Jadwal Bulan Ini</p>
-          <p class="text-xs text-muted-foreground">Lihat jadwal sholat bulan {{ currentMonth }}</p>
+      <Card class="border-2 p-1 sm:p-2 md:p-5">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center gap-2">
+            <Button variant="neutral" size="icon" @click="goToPrevMonth" class="h-8 w-8">
+              <ChevronLeft class="h-4 w-4" />
+            </Button>
+            <p class="font-black text-sm">Jadwal Bulan {{ currentMonth }}</p>
+            <Button variant="neutral" size="icon" @click="goToNextMonth" class="h-8 w-8">
+              <ChevronRight class="h-4 w-4" />
+            </Button>
+          </div>
+          <Badge v-if="!appStore.hasLocation" variant="neutral" class="text-[9px]"> Lokasi belum diatur </Badge>
         </div>
-        <Button size="sm" variant="neutral"> Lihat Kalender → </Button>
+
+        <p class="text-xs text-muted-foreground mb-4">Klik tanggal untuk lihat jadwal harian</p>
+
+        <!-- Skeleton saat loading -->
+        <div v-if="monthlyLoading" class="grid grid-cols-7 gap-1">
+          <Skeleton v-for="n in 35" :key="n" class="h-12 w-full" />
+        </div>
+
+        <!-- Tampilkan kalender jika data tersedia -->
+        <div v-else-if="monthlyData" class="grid grid-cols-7 gap-2 text-center">
+          <!-- Nama hari -->
+          <div v-for="day in ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab']" :key="day" class="text-xs font-bold py-1">
+            {{ day }}
+          </div>
+
+          <!-- Sel kosong sebelum tanggal 1 -->
+          <div v-for="n in firstDayOfMonth" :key="'empty-' + n" class="h-12 text-xs text-muted-foreground flex items-center justify-center"></div>
+
+          <!-- Tanggal aktif dengan data Hijriyah -->
+          <Button
+            variant="neutral"
+            v-for="item in hijriDaysInMonth"
+            :key="item.day"
+            class="h-auto group relative border border-border rounded flex flex-col items-center justify-center cursor-pointer hover:bg-primary hover:text-white transition-colors p-4"
+            :class="{ 'bg-primary/70 border-primary': item.day === selectedDate.getDate() }"
+            @click="setDay(item.day)"
+          >
+            <span class="text-[9px] md:text-xs text-left absolute left-2 top-2 font-bold">{{ item.day }}</span>
+            <span class="leading-tight">{{ getSubuhTime(item.day) }}</span>
+            <span class="hidden md:visible md:text-xs leading-tight text-muted-foreground group-hover:text-white"> {{ item.hijriDay }} {{ item.hijriMonthName }} {{ item.hijriYear }} H </span>
+          </Button>
+        </div>
+
+        <!-- Jika lokasi belum ada -->
+        <div v-else class="text-center py-4 text-muted-foreground text-sm">Aktifkan lokasi untuk melihat jadwal bulanan</div>
       </Card>
     </div>
   </div>
@@ -169,6 +217,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from "vue";
 import { toHijri } from "hijri-converter";
+
+import { MoonStar, Sun, CloudSun, Sunrise, Stars, ChevronLeft, ChevronRight } from "lucide-vue-next";
 
 import { useAppStore } from "@/stores/useAppStore";
 import { useJadwalSholat } from "@/composables/queries/useSholatQueries";
@@ -190,6 +240,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/dropdown-menu";
+import { useMonthlyJadwal } from "@/composables/queries/useMonthlyJadwal";
 
 const appStore = useAppStore();
 
@@ -202,6 +253,15 @@ const selectedDate = defineModel<Date>("selectedDate", { required: true, default
 
 // Daftar nama bulan
 const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
+
+//eslint-disable-next-line @typescript-eslint/no-explicit-any
+const prayerIconMap: Record<string, any> = {
+  Subuh: Sunrise,
+  Dzuhur: Sun,
+  Ashar: CloudSun,
+  Maghrib: MoonStar,
+  "Isya'": Stars,
+};
 
 // Rentang tahun (5 tahun ke belakang sampai 5 tahun ke depan)
 const yearRange = computed(() => {
@@ -313,31 +373,39 @@ const countdown = ref("");
 // Update countdown (dijalankan tiap detik, hanya jika tanggal yang dipilih adalah hari ini)
 function updateCountdown() {
   if (!jadwal.value || !isTodaySelected.value) {
-    // Jika bukan hari ini, reset countdown
     nextPrayerName.value = null;
     countdown.value = "";
     return;
   }
 
-  const current = new Date();
-  const currentMinutes = current.getHours() * 60 + current.getMinutes();
+  const now = new Date();
+  const currentTime = now.getTime();
 
   for (const p of jadwal.value) {
     const [h, m] = p.time.split(":").map(Number);
-    const prayerMinutes = (h ?? 0) * 60 + (m ?? 0);
+    const prayerTime = new Date(now);
+    prayerTime.setHours(h ?? 0, m ?? 0, 0, 0); // set detik dan milidetik ke 0
+    const diffMs = prayerTime.getTime() - currentTime;
 
-    if (prayerMinutes > currentMinutes) {
-      const diff = prayerMinutes - currentMinutes;
-      const hours = Math.floor(diff / 60);
-      const minutes = diff % 60;
-      countdown.value = hours > 0 ? `${hours} jam ${minutes} menit` : `${minutes} menit`;
+    if (diffMs > 0) {
+      const totalSeconds = Math.floor(diffMs / 1000);
+      const hours = Math.floor(totalSeconds / 3600);
+      const minutes = Math.floor((totalSeconds % 3600) / 60);
+      const seconds = totalSeconds % 60;
+
+      // Opsi 1: format HH:MM:SS (dua digit)
+      const pad = (n: number) => n.toString().padStart(2, "0");
+      countdown.value = `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+
+      // Opsi 2: format teks (misal: "2 jam 15 menit 30 detik")
+      // countdown.value = `${hours} jam ${minutes} menit ${seconds} detik`;
+
       nextPrayerName.value = p.name;
       return;
     }
   }
 
-  // Jika sudah lewat semua sholat (setelah Isya), maka next adalah sholat pertama besok
-  // Untuk sementara kita tidak tampilkan countdown (atau bisa diatur sesuai kebutuhan)
+  // Jika sudah lewat semua sholat hari ini (setelah Isya), bisa diisi dengan sholat besok atau dikosongkan
   nextPrayerName.value = null;
   countdown.value = "";
 }
@@ -379,4 +447,52 @@ const currentMonth = computed(() => {
     year: "numeric",
   });
 });
+
+const currentMonthIndex = computed(() => selectedDate.value.getMonth() + 1);
+const currentYear = computed(() => selectedDate.value.getFullYear());
+
+const { data: monthlyData, isLoading: monthlyLoading } = useMonthlyJadwal(lat.value ?? 0, lng.value ?? 0, currentMonthIndex.value, currentYear.value);
+
+// Hari pertama dalam bulan (0 = Minggu, 1 = Senin, ...)
+const firstDayOfMonth = computed(() => {
+  const d = new Date(selectedDate.value.getFullYear(), selectedDate.value.getMonth(), 1);
+  return d.getDay(); // 0 = Minggu
+});
+
+// Helper untuk mengambil waktu Subuh dari data bulanan
+function getSubuhTime(day: number) {
+  if (!monthlyData.value) return "";
+  const key = `${day.toString().padStart(2, "0")}-${currentMonthIndex.value.toString().padStart(2, "0")}-${currentYear.value}`;
+  return monthlyData.value[key]?.[0]?.time || "";
+}
+
+const hijriDaysInMonth = computed(() => {
+  const year = selectedDate.value.getFullYear();
+  const month = selectedDate.value.getMonth() + 1;
+  const days = daysInMonth.value;
+  const hijriDays = [];
+  for (let d = 1; d <= days; d++) {
+    const hijri = toHijri(year, month, d);
+    hijriDays.push({
+      day: d,
+      hijriDay: hijri.hd,
+      hijriMonth: hijri.hm,
+      hijriYear: hijri.hy,
+      hijriMonthName: hijriMonths[hijri.hm - 1],
+    });
+  }
+  return hijriDays;
+});
+
+function goToPrevMonth() {
+  const newDate = new Date(selectedDate.value);
+  newDate.setMonth(newDate.getMonth() - 1);
+  selectedDate.value = newDate;
+}
+
+function goToNextMonth() {
+  const newDate = new Date(selectedDate.value);
+  newDate.setMonth(newDate.getMonth() + 1);
+  selectedDate.value = newDate;
+}
 </script>

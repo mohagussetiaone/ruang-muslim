@@ -23,16 +23,16 @@
       </div>
 
       <!-- SKELETON -->
-      <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
-        <div v-for="n in 20" :key="n" class="border-4 border-black rounded-xl p-4 h-37.5 flex flex-col animate-pulse bg-primary/5">
+      <div v-if="isLoading" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3">
+        <div v-for="n in 20" :key="n" class="border-4 border-black rounded-xl p-4 h-52 flex flex-col animate-pulse bg-primary/5">
           <!-- top badges -->
-          <div class="flex justify-between mb-2">
+          <div class="flex justify-between">
             <div class="h-4 w-8 rounded bg-primary/20"></div>
             <div class="h-4 w-14 rounded bg-primary/20"></div>
           </div>
 
           <!-- arabic name -->
-          <div class="h-6 w-16 ml-auto mb-2 rounded bg-primary/20"></div>
+          <div class="h-6 w-16 ml-auto rounded bg-primary/20"></div>
 
           <!-- latin -->
           <div class="h-4 w-20 rounded bg-primary/20 mb-1"></div>
@@ -52,25 +52,25 @@
       </Alert>
 
       <!-- GRID -->
-      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+      <div v-else class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-3">
         <RouterLink v-for="surah in filteredSurah" :key="surah.nomor" :to="{ name: 'surah-detail', params: { surahId: surah.nomor } }" class="group block" @mouseenter="prefetch(surah.nomor)">
-          <Card hoverable class="p-4 h-full flex flex-col">
+          <Card hoverable class="p-4 gap-1 h-full flex flex-col">
             <!-- Top row -->
-            <div class="flex items-start justify-between mb-2">
+            <div class="flex items-start justify-between">
               <Badge variant="neutral" class="text-[10px]">{{ surah.nomor }}</Badge>
-              <Badge :variant="surah.tempat_turun === 'mekah' ? 'neutral' : 'default'" class="text-[9px]">
+              <Badge :variant="surah.tempat_turun === 'mekah' ? 'neutral' : 'default'">
                 {{ surah.tempat_turun === "mekah" ? "Makkiyah" : "Madaniyah" }}
               </Badge>
             </div>
             <!-- Arabic name -->
-            <p class="font-arabic text-2xl text-main text-right mb-2 leading-relaxed" dir="rtl">
+            <p class="font-arabic text-4xl text-main text-right leading-relaxed" dir="rtl">
               {{ surah.nama }}
             </p>
-            <h3 class="font-display font-black text-foreground text-sm leading-tight group-hover:text-main transition-colors">
+            <h3 class="font-display text-lg font-black text-foreground leading-tight group-hover:text-main transition-colors">
               {{ surah.nama_latin }}
             </h3>
-            <p class="text-[11px] text-muted-foreground mt-0.5">{{ surah.arti }}</p>
-            <p class="text-[10px] text-muted-foreground/60 mt-auto pt-2 font-bold">{{ surah.jumlah_ayat }} ayat</p>
+            <p class="text-muted-foreground mt-0.5">{{ surah.arti }}</p>
+            <p class="text-sm text-muted-foreground/60 mt-auto pt-2 font-bold">{{ surah.jumlah_ayat }} ayat</p>
           </Card>
         </RouterLink>
 

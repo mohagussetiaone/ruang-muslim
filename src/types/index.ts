@@ -33,7 +33,6 @@ export interface Surah {
   audio: string;
 }
 
-// Surah list item dengan field tambahan dari TanStack select()
 export interface SurahListItem extends Surah {
   label: string; // "1. Al-Fatihah"
 }
@@ -47,7 +46,6 @@ export interface Ayat {
   idn: string;
 }
 
-// ─── QURAN ─────────────────────────────────────────────────────────────────
 export interface SurahNavigation {
   id: number;
   nomor: number;
@@ -65,10 +63,10 @@ export interface SurahDetail extends Surah {
   deskripsi: string;
   audio: string;
   ayat: Ayat[];
-
   surat_sebelumnya: SurahNavigation | null;
   surat_selanjutnya: SurahNavigation | null;
 }
+
 export interface Tafsir {
   nomor: number;
   nama: string;
@@ -87,7 +85,7 @@ export interface ApiResponse<T> {
   data: T;
 }
 
-// ─── SHOLAT ────────────────────────────────────────────────────────────────
+// ─── SHOLAT — TIMINGS ──────────────────────────────────────────────────────
 export interface PrayerTimings {
   Fajr: string;
   Sunrise: string;
@@ -98,8 +96,129 @@ export interface PrayerTimings {
   Isha: string;
   Imsak: string;
   Midnight: string;
+  Firstthird: string;
+  Lastthird: string;
 }
 
+// ─── SHOLAT — HIJRI DATE ───────────────────────────────────────────────────
+export interface HijriWeekday {
+  en: string;
+  ar: string;
+}
+
+export interface HijriMonth {
+  number: number;
+  en: string;
+  ar: string;
+  days: number;
+}
+
+export interface HijriDesignation {
+  abbreviated: string; // "AH"
+  expanded: string; // "Anno Hegirae"
+}
+
+export interface HijriDate {
+  date: string; // "21-09-1447"
+  format: string; // "DD-MM-YYYY"
+  day: string; // "21"
+  weekday: HijriWeekday;
+  month: HijriMonth;
+  year: string; // "1447"
+  designation: HijriDesignation;
+  holidays: string[]; // ["Lailat-ul-Qadr"]
+  adjustedHolidays: string[];
+  method: string; // "HJCoSA"
+}
+
+// ─── SHOLAT — GREGORIAN DATE ───────────────────────────────────────────────
+export interface GregorianWeekday {
+  en: string; // "Tuesday"
+}
+
+export interface GregorianMonth {
+  number: number;
+  en: string; // "March"
+}
+
+export interface GregorianDesignation {
+  abbreviated: string; // "AD"
+  expanded: string; // "Anno Domini"
+}
+
+export interface GregorianDate {
+  date: string; // "10-03-2026"
+  format: string; // "DD-MM-YYYY"
+  day: string; // "10"
+  weekday: GregorianWeekday;
+  month: GregorianMonth;
+  year: string; // "2026"
+  designation: GregorianDesignation;
+  lunarSighting: boolean;
+}
+
+export interface PrayerDate {
+  readable: string; // "10 Mar 2026"
+  timestamp: string; // "1773100800"
+  hijri: HijriDate;
+  gregorian: GregorianDate;
+}
+
+// ─── SHOLAT — META / METHOD ────────────────────────────────────────────────
+export interface MethodLocation {
+  latitude: number;
+  longitude: number;
+}
+
+export interface MethodParams {
+  Fajr: number; // angle in degrees
+  Isha: number; // angle in degrees
+}
+
+export interface PrayerMethod {
+  id: number;
+  name: string;
+  params: MethodParams;
+  location: MethodLocation;
+}
+
+export interface PrayerOffset {
+  Imsak: number;
+  Fajr: number;
+  Sunrise: number;
+  Dhuhr: number;
+  Asr: number;
+  Maghrib: number;
+  Sunset: number;
+  Isha: number;
+  Midnight: number;
+}
+
+export interface PrayerMeta {
+  latitude: number;
+  longitude: number;
+  timezone: string; // "Asia/Jakarta"
+  method: PrayerMethod;
+  latitudeAdjustmentMethod: string; // "ANGLE_BASED"
+  midnightMode: string; // "STANDARD"
+  school: string; // "STANDARD"
+  offset: PrayerOffset;
+}
+
+// ─── SHOLAT — API RESPONSE ENVELOPE ────────────────────────────────────────
+export interface PrayerApiData {
+  timings: PrayerTimings;
+  date: PrayerDate;
+  meta: PrayerMeta;
+}
+
+export interface PrayerApiResponse {
+  code: number; // 200
+  status: string; // "OK"
+  data: PrayerApiData;
+}
+
+// ─── SHOLAT — UI HELPERS ───────────────────────────────────────────────────
 export interface PrayerTime {
   name: string;
   time: string; // "04:32"
@@ -107,6 +226,35 @@ export interface PrayerTime {
   isNext?: boolean;
 }
 
+/** Waktu tambahan (Imsak, Sunrise, Sunset, Midnight) dengan ikon */
+export interface AdditionalTime {
+  key: string;
+  name: string;
+  time: string;
+  icon: string;
+}
+
+/** Info Hijriah yang sudah diproses untuk UI */
+export interface HijriInfo {
+  day: string;
+  monthNumber: number;
+  monthName: string; // dalam Bahasa Indonesia, misal "Ramadhan"
+  monthNameEn: string; // dari API, misal "Ramaḍān"
+  year: string;
+  weekday: string;
+  holidays: string[];
+  designation: string; // "H"
+}
+
+/** Detail metode perhitungan untuk ditampilkan di UI */
+export interface MethodDetail {
+  name: string;
+  fajrAngle: number;
+  ishaAngle: number;
+  locationRef: string; // "1.3521, 103.8198"
+}
+
+// ─── KOORDINAT ─────────────────────────────────────────────────────────────
 export interface Koordinat {
   lat: number;
   lng: number;

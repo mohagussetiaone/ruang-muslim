@@ -28,7 +28,7 @@ export const sholatService = {
       params: {
         latitude: lat,
         longitude: lng,
-        method: 11,
+        method: 20,
       },
     });
     return data.data.timings;

@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from "vue-router";
 import type { RouteRecordRaw } from "vue-router";
 import AppLayout from "@/components/layout/AppLayout.vue";
+import QuranLayout from "@/components/layout/QuranLayout.vue";
 
 declare module "vue-router" {
   interface RouteMeta {
@@ -29,15 +30,21 @@ const routes: RouteRecordRaw[] = [
       },
       {
         path: "quran",
-        name: "quran",
-        component: () => import("@/views/quran/QuranView.vue"),
-        meta: { title: "Al-Quran Digital" },
-      },
-      {
-        path: "quran/:surahId",
-        name: "surah-detail",
-        component: () => import("@/views/quran/SurahDetail.vue"),
-        meta: { title: "Detail Surah" },
+        component: QuranLayout,
+        children: [
+          {
+            path: "",
+            name: "quran",
+            component: () => import("@/views/quran/QuranView.vue"),
+            meta: { title: "Al-Quran Digital" },
+          },
+          {
+            path: ":surahId",
+            name: "surah-detail",
+            component: () => import("@/views/quran/SurahDetail.vue"),
+            meta: { title: "Detail Surah" },
+          },
+        ],
       },
       {
         path: "jadwal-sholat",

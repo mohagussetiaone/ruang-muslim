@@ -1,5 +1,5 @@
 import { computed } from "vue";
-import { useQuery, useQueryClient } from "@tanstack/vue-query";
+import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/vue-query";
 import type { Ref, ComputedRef } from "vue";
 import { quranService } from "@/services/quranService";
 
@@ -29,6 +29,7 @@ export function useSurahDetail(id: Ref<number | string> | ComputedRef<number | s
     queryKey: computed(() => quranKeys.surahDetail(id.value)),
     queryFn: () => quranService.getSurahDetail(id.value),
     enabled: computed(() => !!id.value),
+    placeholderData: keepPreviousData,
   });
 }
 

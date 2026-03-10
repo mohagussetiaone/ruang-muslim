@@ -1,15 +1,17 @@
 <template>
-  <!-- AppLayout adalah ekuivalen <Layout> di React -->
-  <!-- RouterView = <Outlet /> dari React Router -->
   <div class="min-h-screen bg-cream font-body flex flex-col">
     <Navbar />
 
-    <!-- MAIN CONTENT -->
     <main class="flex-1">
-      <!-- RouterView = Outlet di React -->
       <RouterView v-slot="{ Component, route }">
-        <Transition name="page" mode="out-in">
-          <component :is="Component" :key="route.path" />
+        <!--
+          Transisi HANYA aktif untuk route yang BUKAN bagian dari quran.
+          QuranLayout punya RouterView sendiri, jadi tidak perlu transisi di sini.
+          Kalau QuranLayout ikut transition mode="out-in", dia akan unmount
+          dulu sebelum mount lagi → sidebar hilang sebentar (blank putih).
+        -->
+        <Transition :name="route.path.startsWith('/quran') ? '' : 'page'" mode="out-in">
+          <component :is="Component" :key="route.path.startsWith('/quran') ? 'quran-layout' : route.path" />
         </Transition>
       </RouterView>
     </main>
@@ -24,7 +26,6 @@ import AppFooter from "./Footer.vue";
 </script>
 
 <style scoped>
-/* Page transition (seperti framer-motion di React) */
 .page-enter-active,
 .page-leave-active {
   transition: all 0.25s ease;

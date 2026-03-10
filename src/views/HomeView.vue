@@ -1,16 +1,11 @@
 <template>
   <div class="font-body bg-background min-h-screen">
     <!-- HERO -->
-    <section class="relative overflow-hidden border-b-4 border-accent">
+    <section class="relative overflow-hidden border-b-4 border-accent bg-linear-to-b from-primary/5 via-primary/10 to-primary/20">
       <div class="absolute inset-0 opacity-[0.06]" style="background-image: linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px); background-size: 44px 44px" />
       <div class="relative max-w-6xl mx-auto px-4 py-20 grid md:grid-cols-2 gap-12 items-center">
         <!-- Left -->
         <div>
-          <Badge variant="default" class="mb-6 gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-foreground animate-pulse" />
-            Ruang Muslim · Versi 2
-          </Badge>
-
           <h1 class="font-display text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] mb-6">
             Temukan kedamaian di<br />
             <span class="text-primary">Ruang muslim</span><br />
@@ -35,35 +30,79 @@
         <!-- Right: Ayat card -->
         <div class="relative">
           <Card class="bg-primary/20 border-2 border-main-foreground/20 p-8">
-            <Badge variant="default" class="absolute -top-3 left-6">AYAT HARI INI</Badge>
-            <p class="font-arabic text-4xl text-right leading-loose mb-5" dir="rtl">فَإِنَّ مَعَ الْعُسْرِ يُسْرًا ۝ إِنَّ مَعَ الْعُسْرِ يُسْرًا</p>
-            <div class="h-px bg-main-foreground/10 mb-4" />
-            <p class="text-sm leading-relaxed italic mb-3">"Maka sesungguhnya bersama kesulitan ada kemudahan. Sesungguhnya bersama kesulitan ada kemudahan."</p>
-            <p class="text-accent text-xs font-black tracking-wide">— QS. Al-Insyirah: 5–6</p>
+            <Badge variant="default" class="absolute -top-3 left-6 uppercase">Jadwal solat</Badge>
+
+            <!-- Baris lokasi dan tanggal -->
+            <div class="w-full flex justify-between">
+              <div>
+                <h1>Lokasi anda</h1>
+                <div class="flex gap-2 items-center">
+                  <MapPinIcon class="w-6 h-6 text-accent" />
+                  <p class="font-bold">{{ locationName || "Memuat lokasi..." }}</p>
+                  <Button v-if="!appStore.hasLocation" size="sm" variant="neutral" @click="requestLocation" :loading="gettingLocation"> Perbarui </Button>
+                </div>
+              </div>
+              <div>
+                <div class="text-right text-xs text-muted-foreground px-4" v-if="todayDate">
+                  {{ todayDate }}
+                </div>
+                <h3>{{ hijriDate }}</h3>
+              </div>
+            </div>
+
+            <!-- Card jadwal sholat -->
+            <Card class="bg-secondary-background text-foreground border-2 border-border shadow-shadow hover:translate-x-boxShadowX hover:translate-y-boxShadowY hover:shadow-none mt-4">
+              <!-- Bagian atas: sholat berikutnya -->
+              <div class="flex flex-col gap-3 justify-center items-center p-6">
+                <!-- Tampilkan skeleton saat loading -->
+                <template v-if="isLoading">
+                  <Skeleton class="h-8 w-32" />
+                  <Skeleton class="h-8 w-24" />
+                </template>
+
+                <!-- Saat sedang dalam masa 3 menit setelah adzan -->
+                <template v-else-if="activePrayer">
+                  <p class="text-lg">Saatnya adzan</p>
+                  <h1 class="text-3xl sm:text-4xl md:text-5xl font-display font-black">
+                    {{ activePrayer.name }}
+                  </h1>
+                  <p class="text-3xl sm:text-4xl md:text-5xl font-display font-black">
+                    {{ activePrayer.time }}
+                  </p>
+                </template>
+
+                <!-- Kondisi normal: tampilkan countdown menuju sholat berikutnya -->
+                <template v-else-if="nextPrayer">
+                  <p v-if="countdown">{{ countdown }} menuju</p>
+                  <h1 class="text-3xl sm:text-4xl md:text-5xl font-display font-black">
+                    {{ nextPrayer.name }}
+                  </h1>
+                  <p class="text-3xl sm:text-4xl md:text-5xl font-display font-black">
+                    {{ nextPrayer.time }}
+                  </p>
+                </template>
+
+                <!-- Jika tidak ada jadwal (misal setelah Isya') -->
+                <template v-else>
+                  <p class="text-muted-foreground">Tidak ada jadwal</p>
+                </template>
+              </div>
+
+              <!-- Grid 5 tombol untuk semua waktu sholat -->
+              <div class="grid grid-cols-5 gap-4 m-4">
+                <template v-if="isLoading">
+                  <Skeleton v-for="n in 5" :key="n" class="h-16 w-full" />
+                </template>
+                <template v-else-if="jadwal">
+                  <Button v-for="prayer in jadwal" :key="prayer.key" :class="['flex h-auto flex-col justify-center items-center', prayer.key === nextPrayer?.key ? '' : 'bg-primary/85']" variant="neutral">
+                    <h1 class="text-sm font-black tracking-widest">{{ prayer.name }}</h1>
+                    <p class="font-display text-base font-black">{{ prayer.time }}</p>
+                  </Button>
+                </template>
+              </div>
+            </Card>
           </Card>
           <div class="absolute -bottom-3 -right-3 w-full h-full border-2 border-accent/30 -z-10" />
-        </div>
-      </div>
-    </section>
-
-    <!-- ═══ PRAYER TIMES BAR ══════════════════════════════════════ -->
-    <section class="bg-main border-b-4 border-border">
-      <div class="max-w-6xl mx-auto px-4 py-5">
-        <div class="flex items-center gap-3 mb-3">
-          <span class="text-xs font-black tracking-widest uppercase">Waktu Sholat Hari Ini</span>
-          <div class="flex-1 h-px bg-main-foreground/10" />
-          <span class="/40 text-xs">{{ todayDate }}</span>
-        </div>
-        <div class="grid grid-cols-5 gap-2">
-          <div
-            v-for="prayer in prayerTimes"
-            :key="prayer.name"
-            :class="['border-2 px-3 py-3 text-center transition-all', prayer.isNext ? 'bg-primary/25 text-foreground border-border shadow-shadow' : 'bg-main/40  border-main-foreground/20']"
-          >
-            <p class="text-[10px] font-black tracking-widest uppercase opacity-70 mb-1">{{ prayer.name }}</p>
-            <p class="font-display text-xl font-black">{{ prayer.time }}</p>
-            <Badge v-if="prayer.isNext" variant="default" class="mt-1 text-[9px]">BERIKUTNYA</Badge>
-          </div>
         </div>
       </div>
     </section>
@@ -107,22 +146,169 @@
 </template>
 
 <script setup lang="ts">
+import { ref, computed, onMounted, onUnmounted, watch } from "vue";
 import { Card } from "@/components/card";
 import { Badge } from "@/components/badge";
 import { Button } from "@/components/button";
+import { MapPinIcon } from "lucide-vue-next";
 
+import { useAppStore } from "@/stores/useAppStore";
+import { useJadwalSholat } from "@/composables/queries/useSholatQueries";
+import { toHijri } from "hijri-converter";
+import { Skeleton } from "@/components/skeleton";
+
+const appStore = useAppStore();
+const gettingLocation = ref(false);
+const locationName = ref<string | null>(null);
+
+// Tanggal hari ini
+const selectedDate = ref(new Date());
+const dateParam = computed(() => {
+  const d = selectedDate.value;
+  return `${d.getDate()}-${d.getMonth() + 1}-${d.getFullYear()}`;
+});
+
+const lat = computed(() => appStore.koordinat?.lat ?? -6.2);
+const lng = computed(() => appStore.koordinat?.lng ?? 106.816666);
+
+// Ambil jadwal menggunakan composable yang sama
+const { data: jadwal, isLoading } = useJadwalSholat({
+  lat,
+  lng,
+  date: dateParam,
+});
+
+const hijriMonths = ["Muharram", "Safar", "Rabi'ul Awal", "Rabi'ul Akhir", "Jumadil Awal", "Jumadil Akhir", "Rajab", "Sya'ban", "Ramadhan", "Syawwal", "Dzulqa'dah", "Dzulhijjah"];
+
+const hijriDate = computed(() => {
+  const d = selectedDate.value;
+  const hijri = toHijri(d.getFullYear(), d.getMonth() + 1, d.getDate());
+  return `${hijri.hd} ${hijriMonths[hijri.hm - 1]} ${hijri.hy} H`;
+});
+
+const todayDate = computed(() => {
+  return selectedDate.value.toLocaleDateString("id-ID", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+});
+
+// ─── Waktu real-time (diupdate tiap detik) ───────────────────────
+const currentTime = ref(new Date());
+// eslint-disable-next-line
+let timer: ReturnType<typeof setInterval>;
+
+onMounted(() => {
+  timer = setInterval(() => {
+    currentTime.value = new Date();
+  }, 1000);
+});
+
+onUnmounted(() => {
+  clearInterval(timer);
+});
+
+// ─── Computed: sholat berikutnya ─────────────────────────────────
+const nextPrayer = computed(() => {
+  if (!jadwal.value) return null;
+  const now = currentTime.value;
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+
+  for (const p of jadwal.value) {
+    const [h, m] = p.time.split(":").map(Number);
+    const prayerMinutes = (h ?? 0) * 60 + (m ?? 0);
+    if (prayerMinutes > currentMinutes) {
+      return p;
+    }
+  }
+  return null;
+});
+
+// ─── Computed: sholat yang sedang aktif (3 menit setelah adzan) ──
+const activePrayer = computed(() => {
+  if (!jadwal.value) return null;
+  const now = currentTime.value;
+
+  for (const p of jadwal.value) {
+    const [h, m] = p.time.split(":").map(Number);
+    const prayerTime = new Date(now);
+    prayerTime.setHours(h!, m!, 0, 0);
+    const endTime = new Date(prayerTime.getTime() + 3 * 60 * 1000);
+
+    if (now >= prayerTime && now <= endTime) {
+      return p;
+    }
+  }
+  return null;
+});
+
+// ─── Computed: countdown (read-only, JANGAN di-assign manual) ────
+const countdown = computed(() => {
+  if (!nextPrayer.value) return "";
+  const now = currentTime.value;
+  const [h, m] = nextPrayer.value.time.split(":").map(Number);
+  const prayerTime = new Date(now);
+  prayerTime.setHours(h!, m!, 0, 0);
+  const diffMs = prayerTime.getTime() - now.getTime();
+
+  if (diffMs <= 0) return "";
+
+  const totalSeconds = Math.floor(diffMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return `${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+});
+
+// ─── Lokasi ──────────────────────────────────────────────────────
+async function resolveLocationName(lat: number, lng: number) {
+  try {
+    const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+    const data = await res.json();
+    const a = data.address;
+    locationName.value = `${a.suburb || a.city_district || a.town || a.village || ""}, ${a.city || a.county || a.state || ""}`.replace(/^, /, "").replace(/, $/, "");
+  } catch (error) {
+    console.error("Reverse geocoding failed", error);
+    locationName.value = null;
+  }
+}
+
+async function requestLocation() {
+  gettingLocation.value = true;
+  await appStore.requestGeolocation();
+  if (appStore.koordinat) {
+    await resolveLocationName(appStore.koordinat.lat, appStore.koordinat.lng);
+  }
+  gettingLocation.value = false;
+}
+
+onMounted(() => {
+  if (appStore.koordinat) {
+    resolveLocationName(appStore.koordinat.lat, appStore.koordinat.lng);
+  } else {
+    locationName.value = "Jakarta, Indonesia";
+  }
+});
+
+watch(
+  () => appStore.koordinat,
+  (newCoord) => {
+    if (newCoord) {
+      resolveLocationName(newCoord.lat, newCoord.lng);
+    }
+  },
+);
+
+// ─── Data statis ─────────────────────────────────────────────────
 const stats = [
   { value: "114", label: "Surah Al-Quran" },
   { value: "6.236", label: "Ayat Lengkap" },
   { value: "1.000+", label: "Kumpulan Do'a" },
 ];
-const prayerTimes = [
-  { name: "Subuh", time: "04:32", isNext: false },
-  { name: "Dzuhur", time: "12:01", isNext: false },
-  { name: "Ashar", time: "15:18", isNext: true },
-  { name: "Maghrib", time: "18:06", isNext: false },
-  { name: "Isya'", time: "19:18", isNext: false },
-];
+
 const features = [
   {
     route: "quran",
@@ -152,10 +338,4 @@ const features = [
     text: "text-foreground",
   },
 ];
-const todayDate = new Date().toLocaleDateString("id-ID", {
-  weekday: "long",
-  day: "numeric",
-  month: "long",
-  year: "numeric",
-});
 </script>
